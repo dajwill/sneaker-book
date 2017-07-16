@@ -39,19 +39,12 @@
                   {{note.message}}
                 </p>
               </div>
-              <nav class="level is-mobile">
-                <div class="level-left">
-                  <a class="level-item">
-                    <span class="icon is-small"><i class="fa fa-reply"></i></span>
-                  </a>
-                  <a class="level-item">
-                    <span class="icon is-small"><i class="fa fa-retweet"></i></span>
-                  </a>
-                  <a class="level-item">
-                    <span class="icon is-small"><i class="fa fa-heart"></i></span>
-                  </a>
-                </div>
-              </nav>
+              <p v-if="note.images" @click="note.showPictures = !note.showPictures">{{note.showPictures ? 'Hide Pictures' : 'Show Pictures'}}</p>
+              <div v-if="note.showPictures" class="gallery">
+                <span class="thumbnail">
+                  <img src="http://via.placeholder.com/100x80" alt="Image">
+                </span>
+              </div>
             </div>
             <div class="media-right">
               <button class="delete" @click="deleteNote(note.id)"></button>
@@ -79,7 +72,9 @@ export default {
         id: 1,
         message: 'Lorem ipsum dolor sit amet, consectetur adipiscing elit. Proin ornare magna eros, eu pellentesque tortor vestibulum ut. Maecenas non massa sem. Etiam finibus odio quis feugiat facilisis.',
         author_name: 'John Smith',
-        created_at: Date.now()
+        created_at: Date.now(),
+        showPictures: false,
+        images: 'poop.png'
       }],
       message: ''
     }
@@ -96,7 +91,8 @@ export default {
           message: this.message,
           author_name: 'John Smith',
           id: this.notes.length + 1,
-          created_at: Date.now()
+          created_at: Date.now(),
+          showPictures: false
         }
         this.notes.push(note)
         this.message = ''
