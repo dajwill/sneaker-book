@@ -17,6 +17,6 @@ export default {
     display: flex;
     align-items: center;
     justify-content: center;
-    margin-bottom: 15px;
+    /*margin-bottom: 15px;*/
   }
 </style>

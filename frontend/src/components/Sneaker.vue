@@ -30,18 +30,13 @@
 
       <div class="column" id="notes">
         <div id="timeline">
-          <article class="media">
-            <figure class="media-left">
-              <p class="image is-64x64">
-                <img src="http://bulma.io/images/placeholders/128x128.png">
-              </p>
-            </figure>
+          <article v-for="note in orderedNotes" class="media">
             <div class="media-content">
               <div class="content">
                 <p>
-                  <strong>John Smith</strong> <small>@johnsmith</small> <small>31m</small>
+                  <strong>{{note.author_name}}</strong> <small>31m</small>
                   <br>
-                  Lorem ipsum dolor sit amet, consectetur adipiscing elit. Proin ornare magna eros, eu pellentesque tortor vestibulum ut. Maecenas non massa sem. Etiam finibus odio quis feugiat facilisis.
+                  {{note.message}}
                 </p>
               </div>
               <nav class="level is-mobile">
@@ -59,7 +54,7 @@
               </nav>
             </div>
             <div class="media-right">
-              <button class="delete"></button>
+              <button class="delete" @click="deleteNote(note.id)"></button>
             </div>
           </article>
         </div>
@@ -67,8 +62,9 @@
         <div class="field" id="message-input">
           <label class="label">Message</label>
           <p class="control">
-            <textarea class="textarea" placeholder="Textarea"></textarea>
+            <textarea class="textarea" placeholder="Textarea" v-model="message"></textarea>
           </p>
+          <a class="post button is-primary is-pulled-right" :disabled="!message.length" @click="addNote">Save</a>
         </div>
       </div>
     </div>
@@ -77,25 +73,65 @@
 
 <script>
 export default {
-  created() {
-    console.log(this.props);
+  data() {
+    return {
+      notes: [{
+        id: 1,
+        message: 'Lorem ipsum dolor sit amet, consectetur adipiscing elit. Proin ornare magna eros, eu pellentesque tortor vestibulum ut. Maecenas non massa sem. Etiam finibus odio quis feugiat facilisis.',
+        author_name: 'John Smith',
+        created_at: Date.now()
+      }],
+      message: ''
+    }
+  },
+  computed: {
+    orderedNotes: function () {
+      return this.notes.sort((a, b) => b.created_at - a.created_at)
+    }
+  },
+  methods: {
+    addNote(){
+      if (this.message.length) {
+        let note = {
+          message: this.message,
+          author_name: 'John Smith',
+          id: this.notes.length + 1,
+          created_at: Date.now()
+        }
+        this.notes.push(note)
+        this.message = ''
+      }
+    },
+    deleteNote(id) {
+      let note = this.notes.find(note => note.id === id)
+      let index = this.notes.indexOf(note)
+      this.notes.splice(index, 1)
+    }
   }
 }
 </script>
 
 <style lang="css">
+  .columns {
+    margin: 8px 4px;
+  }
+
+  .delete { visibility: hidden; }
+  article:hover .delete { visibility:visible;; }
   #notes {
     height: 90vh;
+    max-height: 90vh;
     display: flex;
     flex-direction: column;
     justify-content: space-between;
   }
   /*#notes > div, #notes > article { flex: 0 0 100%; }*/
-  #timeline {
-    width: 100%;
-  }
-  #message-input {
+  #timeline { overflow-y: scroll; }
+  /*#message-input {
     align-self: flex-end;
     width: 100%;
+  }*/
+  .button {
+    margin: 4px 0;
   }
 </style>

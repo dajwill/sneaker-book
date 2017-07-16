@@ -67,13 +67,4 @@ export default {
 </script>
 
 <style lang="css" scoped>
-  .hero.is-primary {
-    /*padding: 10px 0;*/
-    height: 10vh;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    margin-bottom: 15px;
-  }
-  /*.hero .title { margin: 0 auto; }*/
 </style>
