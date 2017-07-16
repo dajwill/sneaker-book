@@ -3,7 +3,7 @@
     <section class="hero is-primary">
       <h1 class="title">StockX</h1>
     </section>
-
+    <p>{{sneakers}}</p>
     <div class="columns">
       <div v-for="i in items" class="column is-one-third">
         <div class="card" @click="navigate">
@@ -28,17 +28,39 @@
 
 <script>
 import router from '../router'
+import axios from 'axios'
 
 export default {
   data() {
     return {
-      items: [1,2,3]
+      items: [1,2,3],
+      sneakers: null
     }
+  },
+  created () {
+    this.fetchSneakers()
   },
   methods: {
     navigate(e) {
       console.log(e);
-      router.push({ name: 'Sneaker', params: { id: 1 }})
+      router.push({ name: 'Sneaker', params: { id: 1 }, props: {sneakers: this.sneakers}})
+    },
+    fetchSneakers() {
+      return axios.get('/api/sneakers.json')
+        .then((result) => {
+          let data = result.data
+          let groupedSneakers = data.reduce((coll, val) => {
+            coll[val.parent_id] = coll[val.parent_id] || []
+            coll[val.parent_id].push(val)
+            return coll
+          }, {})
+          this.sneakers = groupedSneakers[null]
+          .map((sneaker) => {
+            sneaker.inventory = groupedSneakers[sneaker.id]
+            return sneaker
+          })
+        })
+        .catch(console.log)
     }
   }
 }
@@ -46,8 +68,12 @@ export default {
 
 <style lang="css" scoped>
   .hero.is-primary {
-    padding: 10px 0;
+    /*padding: 10px 0;*/
+    height: 10vh;
+    display: flex;
+    align-items: center;
+    justify-content: center;
     margin-bottom: 15px;
   }
-  .hero .title { margin: 0 auto; }
+  /*.hero .title { margin: 0 auto; }*/
 </style>
