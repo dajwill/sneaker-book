@@ -51,12 +51,12 @@
           <div class="field">
             <label class="label">Name</label>
             <p class="control">
-              <input class="input" type="text" placeholder="Vapor Max..." v-model="shoeName">
+              <input class="input" type="text" placeholder="Vapor Max..." v-model="newShoe.name">
             </p>
           </div>
         </section>
         <footer class="modal-card-foot">
-          <a class="button is-success" :disabled="!shoeName.length">Save changes</a>
+          <a class="button is-success" :disabled="!newShoe.name.length" @click="addSneaker(newShoe)">Save changes</a>
           <a class="button" @click="hideModal">Cancel</a>
         </footer>
       </div>
@@ -74,7 +74,9 @@ export default {
       items: [1,2,3],
       sneakers: null,
       showModal: false,
-      shoeName: ''
+      newShoe: {
+        name: ''
+      }
     }
   },
   created () {
@@ -82,7 +84,7 @@ export default {
   },
   methods: {
     navigate(shoe) {
-      router.push({ name: 'Sneaker', params: { id: shoe.id }, props: {sneakers: this.sneakers}})
+      router.push({ name: 'Sneaker', params: { id: shoe.id }})
     },
     hideModal() {
       this.showModal = false
@@ -91,8 +93,19 @@ export default {
     isValid() {
       return this.shoeName.length
     },
+    addSneaker(shoe) {
+      return axios.post('http://localhost:3000/sneakers', this.newShoe)
+        .then((success) => {
+          this.sneakers.push(success.data)
+          this.navigate(success.data)
+        })
+        .catch((err) => {
+          console.log(err);
+          this.hideModal()
+        })
+    },
     fetchSneakers() {
-      return axios.get('http://localhost:3000/api/sneakers.json')
+      return axios.get('http://localhost:3000/sneakers.json')
         .then((result) => {
           let data = result.data
 

@@ -1,5 +1,6 @@
 <template lang="html">
   <div id="sneaker">
+    {{sneaker_id}}
     <section class="hero is-primary">
       <h1 class="title">Ultraboost</h1>
     </section>
@@ -34,7 +35,7 @@
             <div class="media-content">
               <div class="content">
                 <p>
-                  <strong>{{note.author_name}}</strong> <small>31m</small>
+                  <strong>@{{note.author_name || 'Anonymous'}}</strong> <small>31m</small>
                   <br>
                   {{note.message}}
                 </p>
@@ -52,12 +53,17 @@
           </article>
         </div>
 
-        <div class="field" id="message-input">
+        <div class="field" id="note-form">
+          <label class="label">Title</label>
+          <p class="control">
+            <textarea class="input" placeholder="Title" v-model="newNote.title"></textarea>
+          </p>
           <label class="label">Message</label>
           <p class="control">
-            <textarea class="textarea" placeholder="Textarea" v-model="message"></textarea>
+            <textarea class="textarea" placeholder="Textarea" v-model="newNote.message"></textarea>
           </p>
-          <a class="post button is-primary is-pulled-right" :disabled="!message.length" @click="addNote">Save</a>
+          <a class="post button is-primary is-pulled-right" :disabled="!newNote.message.length" @click="addNote">Save</a>
+          <a class="post button is-primary is-pulled-right" @click="login">Login</a>
         </div>
       </div>
     </div>
@@ -66,18 +72,32 @@
 
 <script>
 export default {
+  props: {
+    query: {
+      type: String,
+      required: true
+    }
+  },
   data() {
     return {
+      sneaker_id: this.$route.params.id,
+      sneaker: null,
       notes: [{
         id: 1,
         message: 'Lorem ipsum dolor sit amet, consectetur adipiscing elit. Proin ornare magna eros, eu pellentesque tortor vestibulum ut. Maecenas non massa sem. Etiam finibus odio quis feugiat facilisis.',
-        author_name: 'John Smith',
+        author_name: null,
         created_at: Date.now(),
         showPictures: false,
         images: 'poop.png'
       }],
-      message: ''
+      newNote: {
+        message: '',
+        title: ''
+      }
     }
+  },
+  created() {
+    console.log(this.$route);
   },
   computed: {
     orderedNotes: function () {
@@ -86,22 +106,37 @@ export default {
   },
   methods: {
     addNote(){
-      if (this.message.length) {
-        let note = {
-          message: this.message,
-          author_name: 'John Smith',
-          id: this.notes.length + 1,
-          created_at: Date.now(),
-          showPictures: false
-        }
-        this.notes.push(note)
-        this.message = ''
+      if (this.newNote.message.length) {
+
+        this.notes.push(newNote)
+        this.newNote.message = ''
       }
     },
     deleteNote(id) {
       let note = this.notes.find(note => note.id === id)
       let index = this.notes.indexOf(note)
       this.notes.splice(index, 1)
+    },
+    fetchNotes(id) {
+        return axios.get('http://localhost:3000/api/notes.json')
+          .then((result) => {
+            let data = result.data
+
+            this.sneakers = data.filter(sneaker => !sneaker.parent_id)
+                .map((sneaker) => {
+                  sneaker.inventory = data.filter(s => s.parent_id === sneaker.id)
+                  return sneaker
+                })
+          })
+          .catch(console.log)
+    },
+    login(username) {
+        return axios.post('http://localhost:3000/api/author')
+          .then((result) => {
+            let author = result.data
+            setAuthor(author)
+          })
+          .catch(console.log)
     }
   }
 }
@@ -128,6 +163,6 @@ export default {
     width: 100%;
   }*/
   .button {
-    margin: 4px 0;
+    margin: 4px 2px;
   }
 </style>
