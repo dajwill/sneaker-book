@@ -62,6 +62,15 @@
           <p class="control">
             <textarea class="textarea" placeholder="Textarea" v-model="newNote.message"></textarea>
           </p>
+          <div class="images">
+            <input type="file" @change="addImage" multiple>
+            <!-- <span class="is-pulled-right">
+              <span v-for="file in newNote.files" class="tag is-light">
+                {{file.name}}
+                <button class="delete is-small"></button>
+              </span>
+            </span> -->
+          </div>
           <a class="post button is-primary is-pulled-right" :disabled="!newNote.message.length" @click="addNote">Save</a>
           <a class="post button is-primary is-pulled-right" @click="login">Login</a>
         </div>
@@ -117,16 +126,24 @@ export default {
       let index = this.notes.indexOf(note)
       this.notes.splice(index, 1)
     },
+    addImage(e) {
+      var files = e.target.files || e.dataTransfer.files;
+      if (!files.length) {
+        this.newNote.files = null;
+        return;
+      }
+      console.log(files);
+      this.newNote.files = files
+    },
+    fetchShoe(id) {
+      return axios.get(`http://localhost:3000/sneakers/${id}`)
+        .then((result) => this.sneaker = result.data)
+        .catch(console.log)
+    },
     fetchNotes(id) {
         return axios.get('http://localhost:3000/api/notes.json')
           .then((result) => {
-            let data = result.data
-
-            this.sneakers = data.filter(sneaker => !sneaker.parent_id)
-                .map((sneaker) => {
-                  sneaker.inventory = data.filter(s => s.parent_id === sneaker.id)
-                  return sneaker
-                })
+            // this.notes = result.data
           })
           .catch(console.log)
     },
