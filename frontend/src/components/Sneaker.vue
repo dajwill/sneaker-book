@@ -5,28 +5,13 @@
     </section>
 
     <div class="columns">
-      <div class="column is-one-third">
-        <div class="card">
-          <div class="card-image">
-            <figure class="image is-4by3">
-              <img src="http://bulma.io/images/placeholders/1280x960.png" alt="Image">
-            </figure>
-          </div>
-          <div class="card-content">
-            <div class="media">
-              <div class="media-content">
-                <p class="title is-4">Haven UltraBoost</p>
-                <p class="subtitle is-6">adidas</p>
-              </div>
-            </div>
-          </div>
-        </div>
+      <!-- <div class="column is-one-third">
 
         <ul class="menu-list">
           <li><a>Dashboard</a></li>
           <li><a>Customers</a></li>
         </ul>
-      </div>
+      </div> -->
 
       <div class="column" id="notes">
         <div id="timeline">
@@ -39,11 +24,9 @@
                   {{note.message}} {{note.created_at}}
                 </p>
               </div>
-              <p v-if="note.images" @click="note.showPictures = !note.showPictures">{{note.showPictures ? 'Hide Pictures' : 'Show Pictures'}}</p>
+              <p v-if="note.image.content" @click="note.showPictures = !!!note.showPictures">{{note.showPictures ? 'Hide Pictures' : 'Show Pictures'}}</p>
               <div v-if="note.showPictures" class="gallery">
-                <span class="thumbnail">
-                  <img src="http://via.placeholder.com/100x80" alt="Image">
-                </span>
+                <img :src="note.image.content" class="thumbnail" alt="Image">
               </div>
             </div>
             <div class="media-right">
@@ -62,13 +45,7 @@
             <textarea class="textarea" placeholder="Textarea" v-model="newNote.message"></textarea>
           </p>
           <div class="images">
-            <input type="file" @change="addImage" multiple>
-            <!-- <span class="is-pulled-right">
-              <span v-for="file in newNote.files" class="tag is-light">
-                {{file.name}}
-                <button class="delete is-small"></button>
-              </span>
-            </span> -->
+            <input type="file" @change="addImage">
           </div>
           <a class="post button is-primary is-pulled-right" :disabled="!newNote.message.length" @click="addNote">Save</a>
           <a class="post button is-primary is-pulled-right" @click="login">Login</a>
@@ -89,8 +66,10 @@ export default {
       notes: [],
       newNote: {
         message: '',
-        title: ''
-      }
+        title: '',
+        image: {}
+      },
+      file: ''
     }
   },
   created() {
@@ -98,7 +77,10 @@ export default {
     Promise.all([this.fetchSneaker(this.sneaker_id), this.fetchNotes(this.sneaker_id)])
       .then((results) => {
         this.sneaker = results[0].data;
-        this.notes = results[1].data;
+        this.notes = results[1].data.map((n) => {
+          n.showPictures = false
+          return n
+        });
         this.loading = false;
       })
       .catch(console.log)
@@ -112,8 +94,27 @@ export default {
     initNote() {
       return {
         message: '',
-        title: ''
+        title: '',
+        image: {}
       }
+    },
+    addImage(e) {
+      let files = e.target.files || e.dataTransfer.files;
+      if (!files.length) return
+      this.newNote.image = {
+        file_name: files[0].name,
+        file_size: files[0].size,
+        content_type: files[0].type,
+      }
+      this.createImage(files[0])
+    },
+    createImage(file) {
+      var image = new Image();
+      var reader = new FileReader();
+      var vm = this;
+
+      reader.onload = (e) => vm.file = e.target.result;
+      reader.readAsDataURL(file);
     },
     addNote(){
       if (this.newNote.message.length) {
@@ -121,9 +122,15 @@ export default {
         let note = {
           title: this.newNote.title,
           message: this.newNote.message,
-          author_name: null,
-          sneaker_id: this.sneaker_id
+          sneaker_id: this.sneaker_id,
+          image: {
+            ...this.newNote.image,
+            content: this.file,
+            updated_at: new Date().toISOString()
+          }
         }
+
+        console.log(note);
 
         this.postNote(note)
           .then((success) => {
@@ -160,7 +167,7 @@ export default {
   .columns {
     margin: 8px 4px;
   }
-
+  .thumbnail { max-height: 80px;}
   .delete { visibility: hidden; }
   article:hover .delete { visibility:visible;; }
   #notes {
@@ -170,12 +177,7 @@ export default {
     flex-direction: column;
     justify-content: space-between;
   }
-  /*#notes > div, #notes > article { flex: 0 0 100%; }*/
   #timeline { overflow-y: scroll; }
-  /*#message-input {
-    align-self: flex-end;
-    width: 100%;
-  }*/
   .button {
     margin: 4px 2px;
   }
