@@ -1,25 +1,19 @@
 <template lang="html">
   <div id="sneaker">
     <section class="hero is-primary">
+      <i class="fa fa-user" @click="$session.set('showLogin', true)"></i>
       <h1 class="title">{{sneaker.name}}</h1>
+      <span> </span>
     </section>
 
     <div class="columns">
-      <!-- <div class="column is-one-third">
-
-        <ul class="menu-list">
-          <li><a>Dashboard</a></li>
-          <li><a>Customers</a></li>
-        </ul>
-      </div> -->
-
       <div class="column" id="notes">
         <div id="timeline">
           <article v-for="note in orderedNotes" class="media">
             <div class="media-content">
               <div class="content">
                 <p>
-                  <strong>@{{note.author_name || 'Anonymous'}}</strong> <small>31m</small>
+                  <strong>@{{note.author ? note.author.username : 'Anonymous'}}</strong> <small>31m</small>
                   <br>
                   {{note.message}} {{note.created_at}}
                 </p>
@@ -30,6 +24,7 @@
               </div>
             </div>
             <div class="media-right">
+              <i v-if="true" class="fa fa-edit" @click="edit(note)"></i>
               <button class="delete" @click="deleteNote(note.id)"></button>
             </div>
           </article>
@@ -48,11 +43,34 @@
             <input type="file" @change="addImage">
           </div>
           <a class="post button is-primary is-pulled-right" :disabled="!newNote.message.length" @click="addNote">Save</a>
-          <a class="post button is-primary is-pulled-right" @click="login">Login</a>
+          <a class="post button is-primary is-pulled-right" v-if="!user" @click="showModal = true">Login</a>
         </div>
       </div>
     </div>
+
+    <div class="modal" v-bind:class="{ 'is-active': showModal }">
+      <div class="modal-background"></div>
+      <div class="modal-card">
+        <header class="modal-card-head">
+          <p class="modal-card-title">Login</p>
+          <button class="delete" @click="hideModal"></button>
+        </header>
+        <section class="modal-card-body">
+          <div class="field">
+            <label class="label">Name</label>
+            <p class="control">
+              <input class="input" type="text" placeholder="Username" v-model="username">
+            </p>
+          </div>
+        </section>
+        <footer class="modal-card-foot">
+          <a class="button is-success" :disabled="!username" @click="login(username)">Login</a>
+          <a class="button" @click="hideModal">Cancel</a>
+        </footer>
+      </div>
+    </div>
   </div>
+
 </template>
 
 <script>
@@ -61,6 +79,9 @@ import axios from 'axios'
 export default {
   data() {
     return {
+      showModal: false,
+      user: null,
+      username: this.$session.get('user') ? this.$session.get('user').username : null,
       sneaker_id: this.$route.params.id,
       sneaker: {},
       notes: [],
@@ -73,6 +94,9 @@ export default {
     }
   },
   created() {
+    console.log(this.$session.get('poop'))
+    console.log(this.$session.get('user'))
+    this.user = this.$session.get('user') || {}
     this.loading = true
     Promise.all([this.fetchSneaker(this.sneaker_id), this.fetchNotes(this.sneaker_id)])
       .then((results) => {
@@ -98,6 +122,16 @@ export default {
         image: {}
       }
     },
+    editable(note) {
+      return note.author_id || note.id === this.user.id
+    },
+    hideModal() {
+      this.showModal = false,
+      this.username = ''
+    },
+    edit(note) {
+      Object.assign(this.newNote, note)
+    },
     addImage(e) {
       let files = e.target.files || e.dataTransfer.files;
       if (!files.length) return
@@ -120,9 +154,9 @@ export default {
       if (this.newNote.message.length) {
 
         let note = {
-          title: this.newNote.title,
-          message: this.newNote.message,
+          ...this.newNote,
           sneaker_id: this.sneaker_id,
+          author_id: this.user.id,
           image: {
             ...this.newNote.image,
             content: this.file,
@@ -130,12 +164,20 @@ export default {
           }
         }
 
-        console.log(note);
+        if (!this.file.length) delete note.image
 
-        this.postNote(note)
+        console.log(note);
+        let action = (note) => {
+          return note.id ? this.putNote(note) : this.postNote(note)
+        }
+
+        action(note)
           .then((success) => {
-            this.notes.push(success.data)
+            let index = this.notes.findIndex(n => n.id === success.data.id)
+            if (parseInt(index) > -1) this.notes[index] = success.data
+            else this.notes.push(success.data)
             this.newNote = this.initNote()
+            this.file = ''
           })
           .catch(console.log)
       }
@@ -150,12 +192,15 @@ export default {
     fetchNotes(id) { return axios.get(`http://localhost:3000/sneakers/${id}/notes.json`) },
     fetchSneaker(id) { return axios.get(`http://localhost:3000/sneakers/${id}.json`) },
     postNote(note) { return axios.post(`http://localhost:3000/notes`, note) },
+    putNote(note) { return axios.put(`http://localhost:3000/notes/${note.id}`, note) },
     destroyNote(id) { return axios.delete(`http://localhost:3000/notes/${id}`) },
     login(username) {
-        return axios.post('http://localhost:3000/author')
+        return axios.post('http://localhost:3000/login', { username: username })
           .then((result) => {
-            let author = result.data
-            setAuthor(author)
+            let user = result.data
+            console.log(user);
+            this.$session.set('user', user)
+            this.hideModal()
           })
           .catch(console.log)
     }
