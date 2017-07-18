@@ -1,8 +1,7 @@
 <template lang="html">
   <div id="sneaker">
-    {{sneaker_id}}
     <section class="hero is-primary">
-      <h1 class="title">Ultraboost</h1>
+      <h1 class="title">{{sneaker.name}}</h1>
     </section>
 
     <div class="columns">
@@ -37,7 +36,7 @@
                 <p>
                   <strong>@{{note.author_name || 'Anonymous'}}</strong> <small>31m</small>
                   <br>
-                  {{note.message}}
+                  {{note.message}} {{note.created_at}}
                 </p>
               </div>
               <p v-if="note.images" @click="note.showPictures = !note.showPictures">{{note.showPictures ? 'Hide Pictures' : 'Show Pictures'}}</p>
@@ -80,25 +79,14 @@
 </template>
 
 <script>
+import axios from 'axios'
+
 export default {
-  props: {
-    query: {
-      type: String,
-      required: true
-    }
-  },
   data() {
     return {
       sneaker_id: this.$route.params.id,
-      sneaker: null,
-      notes: [{
-        id: 1,
-        message: 'Lorem ipsum dolor sit amet, consectetur adipiscing elit. Proin ornare magna eros, eu pellentesque tortor vestibulum ut. Maecenas non massa sem. Etiam finibus odio quis feugiat facilisis.',
-        author_name: null,
-        created_at: Date.now(),
-        showPictures: false,
-        images: 'poop.png'
-      }],
+      sneaker: {},
+      notes: [],
       newNote: {
         message: '',
         title: ''
@@ -106,49 +94,58 @@ export default {
     }
   },
   created() {
-    console.log(this.$route);
+    this.loading = true
+    Promise.all([this.fetchSneaker(this.sneaker_id), this.fetchNotes(this.sneaker_id)])
+      .then((results) => {
+        this.sneaker = results[0].data;
+        this.notes = results[1].data;
+        this.loading = false;
+      })
+      .catch(console.log)
   },
   computed: {
     orderedNotes: function () {
-      return this.notes.sort((a, b) => b.created_at - a.created_at)
+      return this.notes.sort((a, b) => new Date(b.created_at) - new Date(a.created_at))
     }
   },
   methods: {
+    initNote() {
+      return {
+        message: '',
+        title: ''
+      }
+    },
     addNote(){
       if (this.newNote.message.length) {
 
-        this.notes.push(newNote)
-        this.newNote.message = ''
+        let note = {
+          title: this.newNote.title,
+          message: this.newNote.message,
+          author_name: null,
+          sneaker_id: this.sneaker_id
+        }
+
+        this.postNote(note)
+          .then((success) => {
+            this.notes.push(success.data)
+            this.newNote = this.initNote()
+          })
+          .catch(console.log)
       }
     },
     deleteNote(id) {
-      let note = this.notes.find(note => note.id === id)
-      let index = this.notes.indexOf(note)
-      this.notes.splice(index, 1)
+      this.destroyNote(id).then(() => {
+        let note = this.notes.find(note => note.id === id)
+        let index = this.notes.indexOf(note)
+        this.notes.splice(index, 1)
+      }).catch(console.log)
     },
-    addImage(e) {
-      var files = e.target.files || e.dataTransfer.files;
-      if (!files.length) {
-        this.newNote.files = null;
-        return;
-      }
-      console.log(files);
-      this.newNote.files = files
-    },
-    fetchShoe(id) {
-      return axios.get(`http://localhost:3000/sneakers/${id}`)
-        .then((result) => this.sneaker = result.data)
-        .catch(console.log)
-    },
-    fetchNotes(id) {
-        return axios.get('http://localhost:3000/api/notes.json')
-          .then((result) => {
-            // this.notes = result.data
-          })
-          .catch(console.log)
-    },
+    fetchNotes(id) { return axios.get(`http://localhost:3000/sneakers/${id}/notes.json`) },
+    fetchSneaker(id) { return axios.get(`http://localhost:3000/sneakers/${id}.json`) },
+    postNote(note) { return axios.post(`http://localhost:3000/notes`, note) },
+    destroyNote(id) { return axios.delete(`http://localhost:3000/notes/${id}`) },
     login(username) {
-        return axios.post('http://localhost:3000/api/author')
+        return axios.post('http://localhost:3000/author')
           .then((result) => {
             let author = result.data
             setAuthor(author)
