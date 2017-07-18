@@ -1,7 +1,9 @@
 <template lang="html">
   <div id="sneaker">
     <section class="hero is-primary">
-      <i class="fa fa-user" @click="$session.set('showLogin', true)"></i>
+      <div class="">
+        <span v-if="user.id">@{{user.username}}</span>  <i class="fa fa-user" @click="showModal = true"></i>
+      </div>
       <h1 class="title">{{sneaker.name}}</h1>
       <span> </span>
     </section>
@@ -52,10 +54,10 @@
       <div class="modal-background"></div>
       <div class="modal-card">
         <header class="modal-card-head">
-          <p class="modal-card-title">Login</p>
+          <p class="modal-card-title">{{user.id ? 'Logout' : 'Login'}}</p>
           <button class="delete" @click="hideModal"></button>
         </header>
-        <section class="modal-card-body">
+        <section class="modal-card-body" v-if="!user.id">
           <div class="field">
             <label class="label">Name</label>
             <p class="control">
@@ -64,7 +66,8 @@
           </div>
         </section>
         <footer class="modal-card-foot">
-          <a class="button is-success" :disabled="!username" @click="login(username)">Login</a>
+          <a class="button is-success" v-if="!user.id" :disabled="!username" @click="updateSession(username)">Login</a>
+          <a class="button is-success" v-if="user.id" @click="updateSession(username)">Logout</a>
           <a class="button" @click="hideModal">Cancel</a>
         </footer>
       </div>
@@ -189,21 +192,27 @@ export default {
         this.notes.splice(index, 1)
       }).catch(console.log)
     },
+    updateSession(username) {
+      if (this.user.id) {
+        this.user = {}
+        this.$session.set('user', this.user)
+        this.hideModal()
+      } else {
+        this.login(username).then((result) => {
+          this.user = result.data
+          this.$session.set('user', this.user)
+          this.showModal = false;
+          console.log('showModal', this.showModal);
+        })
+        .catch(console.log)
+      }
+    },
     fetchNotes(id) { return axios.get(`http://localhost:3000/sneakers/${id}/notes.json`) },
     fetchSneaker(id) { return axios.get(`http://localhost:3000/sneakers/${id}.json`) },
     postNote(note) { return axios.post(`http://localhost:3000/notes`, note) },
     putNote(note) { return axios.put(`http://localhost:3000/notes/${note.id}`, note) },
     destroyNote(id) { return axios.delete(`http://localhost:3000/notes/${id}`) },
-    login(username) {
-        return axios.post('http://localhost:3000/login', { username: username })
-          .then((result) => {
-            let user = result.data
-            console.log(user);
-            this.$session.set('user', user)
-            this.hideModal()
-          })
-          .catch(console.log)
-    }
+    login(username) { return axios.post('http://localhost:3000/login', { username: username }) }
   }
 }
 </script>

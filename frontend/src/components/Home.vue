@@ -1,10 +1,10 @@
 <template lang="html">
   <div id="home">
     <section class="hero is-primary">
+      <span></span>
       <h1 class="title">StockX</h1>
+      <span></span>
     </section>
-    <p>{{sneakers}}</p>
-    <a class="button is-primary" @click="showModal = true">Add Shoe</a>
     <div class="columns">
       <div v-for="shoe in sneakers" class="column is-one-third">
         <div class="card" @click="navigate(shoe)">
@@ -24,7 +24,7 @@
         </div>
       </div>
       <div class="column is-one-third">
-        <div class="card">
+        <div class="card" @click="showModal = true">
           <div class="card-image">
             <figure class="image is-4by3">
               <img src="http://bulma.io/images/placeholders/1280x960.png" alt="Image">
