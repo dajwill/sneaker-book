@@ -122,4 +122,5 @@ export default {
 </script>
 
 <style lang="css" scoped>
+  .columns { margin: 8px 4px; }
 </style>
