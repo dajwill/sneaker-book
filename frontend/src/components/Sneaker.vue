@@ -15,13 +15,15 @@
             <div class="media-content">
               <div class="content">
                 <p>
-                  <strong>@{{note.author ? note.author.username : 'Anonymous'}}</strong> <small>31m</small>
+                  <strong>@{{note.author ? note.author.username : 'Anonymous'}}</strong> <small>{{updatedAt(note)}}</small>
                   <br>
-                  {{note.message}} {{note.created_at}}
+                  <h5 class="subtitle" v-if="note.title">{{note.title}}</h5>
+                  {{note.message}}
                 </p>
               </div>
-              <p v-if="note.image.content" @click="note.showPictures = !!!note.showPictures">{{note.showPictures ? 'Hide Pictures' : 'Show Pictures'}}</p>
-              <div v-if="note.showPictures" class="gallery">
+              {{note.showPictures}}
+              <p v-if="note.image.content">Image</p>
+              <div v-if="note.image.content" class="gallery">
                 <img :src="note.image.content" class="thumbnail" alt="Image">
               </div>
             </div>
@@ -78,6 +80,7 @@
 
 <script>
 import axios from 'axios'
+import moment from 'moment'
 
 export default {
   data() {
@@ -97,24 +100,18 @@ export default {
     }
   },
   created() {
-    console.log(this.$session.get('poop'))
-    console.log(this.$session.get('user'))
     this.user = this.$session.get('user') || {}
     this.loading = true
-    Promise.all([this.fetchSneaker(this.sneaker_id), this.fetchNotes(this.sneaker_id)])
-      .then((results) => {
-        this.sneaker = results[0].data;
-        this.notes = results[1].data.map((n) => {
-          n.showPictures = false
-          return n
-        });
-        this.loading = false;
+    this.fetchSneaker(this.sneaker_id)
+      .then((result) => {
+        this.sneaker = result.data
+        this.notes = this.sneaker.notes
       })
       .catch(console.log)
   },
   computed: {
     orderedNotes: function () {
-      return this.notes.sort((a, b) => new Date(b.created_at) - new Date(a.created_at))
+      return this.notes.sort((a, b) => moment(b.updated_at) - moment(a.updated_at))
     }
   },
   methods: {
@@ -134,6 +131,9 @@ export default {
     },
     edit(note) {
       Object.assign(this.newNote, note)
+    },
+    updatedAt: (note) => {
+      return moment(note.updated_at).fromNow()
     },
     addImage(e) {
       let files = e.target.files || e.dataTransfer.files;
@@ -169,7 +169,6 @@ export default {
 
         if (!this.file.length) delete note.image
 
-        console.log(note);
         let action = (note) => {
           return note.id ? this.putNote(note) : this.postNote(note)
         }
@@ -177,8 +176,8 @@ export default {
         action(note)
           .then((success) => {
             let index = this.notes.findIndex(n => n.id === success.data.id)
-            if (parseInt(index) > -1) this.notes[index] = success.data
-            else this.notes.push(success.data)
+            if (parseInt(index) > -1) this.notes.splice(index, 1)
+            this.notes.push(success.data)
             this.newNote = this.initNote()
             this.file = ''
           })
@@ -218,9 +217,8 @@ export default {
 </script>
 
 <style lang="css">
-  .columns {
-    margin: 8px 4px;
-  }
+  h5 { margin-bottom: 2px !important; }
+  .columns { margin: 8px 4px; }
   .thumbnail { max-height: 80px;}
   .delete { visibility: hidden; }
   article:hover .delete { visibility:visible;; }
@@ -232,7 +230,5 @@ export default {
     justify-content: space-between;
   }
   #timeline { overflow-y: scroll; }
-  .button {
-    margin: 4px 2px;
-  }
+  .button { margin: 4px 2px; }
 </style>
