@@ -2,6 +2,8 @@
 
 > Sneaker Book Front-end
 
+![Alt text](/screen.png?raw=true "App")
+
 ## Build Setup
 
 ``` bash
