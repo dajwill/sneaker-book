@@ -22,8 +22,8 @@
                 </p>
               </div>
               {{note.showPictures}}
-              <p v-if="note.image">Image</p>
-              <div v-if="note.image" class="gallery">
+              <p v-if="!isEmpty(note.image)">Image</p>
+              <div v-if="!isEmpty(note.image)" class="gallery">
                 <img :src="loadImage(note.image)" class="thumbnail" alt="Image">
               </div>
             </div>
@@ -122,11 +122,12 @@ export default {
         image: {}
       }
     },
+    isEmpty(obj) { return Object.keys(obj).length === 0 },
     editable(note) {
       return note.author_id || note.id === this.user.id
     },
     loadImage(image) {
-      return note.image ? note.image.content : null
+      return image ? image.content : null
     },
     hideModal() {
       this.showModal = false,

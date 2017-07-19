@@ -122,5 +122,10 @@ export default {
 </script>
 
 <style lang="css" scoped>
-  .columns { margin: 8px 4px; }
+  .columns {
+    margin: 8px 4px;
+    height: 90vh;
+    flex-wrap: wrap;
+    overflow-y: scroll;
+  }
 </style>
